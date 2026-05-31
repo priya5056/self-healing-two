@@ -2,44 +2,33 @@ import faiss
 import pickle
 import numpy as np
 
-from rag.embedder import model
+from rag.embedder import get_model
 
-def retrieve_chunks(
- query,
- top_k=5
- ):
 
- index = faiss.read_index(
-    "data/faiss_index/index.bin"
- )
+def retrieve_chunks(query, top_k=5):
 
- with open(
-    "data/chunks.pkl",
-    "rb"
- ) as f:
+    # Load FAISS index
+    index = faiss.read_index("data/faiss_index/index.bin")
 
-    chunks = pickle.load(f)
+    # Load stored chunks
+    with open("data/chunks.pkl", "rb") as f:
+        chunks = pickle.load(f)
 
- query_embedding = model.encode(
-    [query]
- )
+    # Load embedding model
+    model = get_model()
 
- query_embedding = np.array(
-    query_embedding
- ).astype("float32")
+    # Create query embedding
+    query_embedding = model.encode([query])
 
- distances, indices = index.search(
-    query_embedding,
-    top_k
- )
+    query_embedding = np.array(query_embedding).astype("float32")
 
- retrieved_chunks = []
+    # Search in FAISS index
+    distances, indices = index.search(query_embedding, top_k)
 
- for i in indices[0]:
+    retrieved_chunks = []
 
-    if i != -1:
+    for i in indices[0]:
+        if i != -1:
+            retrieved_chunks.append(chunks[i])
 
-        retrieved_chunks.append(
-            chunks[i]
-        )
     return retrieved_chunks

@@ -1,7 +1,21 @@
-#blueprint for loading embedding AI model
 from sentence_transformers import SentenceTransformer
-model=SentenceTransformer('all-MiniLM-L6-v2')
+
+_model = None
+
+def get_model():
+    global _model
+
+    if _model is None:
+        print("Loading embedding model...")
+        _model = SentenceTransformer(
+            "all-MiniLM-L6-v2"
+        )
+
+    return _model
+
 
 def embed_chunks(chunks):
-    embeddings=model.encode(chunks)
-    return embeddings
+
+    model = get_model()
+
+    return model.encode(chunks)
