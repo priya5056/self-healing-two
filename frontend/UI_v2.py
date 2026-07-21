@@ -10,6 +10,7 @@ try:
 except:
     BACKEND_URL = "http://127.0.0.1:8000"
 
+
 # ----------------------------------
 # Page Config
 # ----------------------------------
@@ -35,80 +36,63 @@ with st.sidebar:
 
     st.title("🎓 AI Academic Assistant")
 
-    st.markdown("---")
-
-    st.subheader("Ask About")
+    st.markdown("### You can ask about")
 
     st.markdown("""
-- Admissions
-- Fee Structure
-- Faculty Information
-- Academic Calendar
-- Student Policies
-- Scholarships
-- NEET Preparation
-- JEE Preparation
-- Study Materials
+- 📘 Admissions
+- 💰 Fee Structure
+- 👨‍🏫 Faculty
+- 🕒 Batch Timings
+- 📅 Academic Calendar
+- 📚 Study Materials
+- 🎯 NEET Preparation
+- 💻 JEE Preparation
 """)
 
-    st.markdown("---")
+    st.divider()
 
-    if st.button("🗑️ Clear Chat"):
-
+    if st.button("🗑 Clear Chat"):
         st.session_state.messages = []
-
         st.rerun()
 
 # ----------------------------------
-# Main Header
+# Header
 # ----------------------------------
 
 st.title("🎓 AI Academic Assistant")
 
-st.markdown(
-    """
-Welcome to the Academic Support Assistant.
-
-Ask questions related to:
-
-✅ Admissions
-
-✅ Fees & Scholarships
-
-✅ Faculty Information
-
-✅ Academic Calendar
-
-✅ Student Policies
-
-✅ NEET Preparation
-
-✅ JEE Preparation
-
-✅ Study Resources
-"""
+st.caption(
+    "Ask questions related to admissions, fees, faculty, study materials, "
+    "batch timings, academic calendar, NEET and JEE preparation."
 )
 
+st.divider()
+
 # ----------------------------------
-# Display Messages
+# Chat History
 # ----------------------------------
 
 for message in st.session_state.messages:
 
-    with st.chat_message(
-        message["role"]
-    ):
-        st.write(
-            message["content"]
-        )
+    with st.chat_message(message["role"]):
+
+        st.write(message["content"])
+
+        if message["role"] == "assistant":
+
+            if "sources" in message and message["sources"]:
+
+                with st.expander("📄 Sources Used"):
+
+                    for source in message["sources"]:
+
+                        st.markdown(f"- {source}")
 
 # ----------------------------------
-# User Input
+# Chat Input
 # ----------------------------------
 
-user_message = st.chat_input(
-    "Ask your question..."
-)
+user_message = st.chat_input("Ask your question...")
 
 # ----------------------------------
 # Send Message
@@ -136,34 +120,56 @@ if user_message:
 
         response = requests.post(
             f"{BACKEND_URL}/chat",
-            json=payload
+            json=payload,
+            timeout=60
         )
 
         if response.status_code == 200:
 
-            ai_reply = response.json()[
-                "reply"
-            ]
+            result = response.json()
+
+            ai_reply = result.get(
+                "reply",
+                "No response."
+            )
+
+            sources = result.get(
+                "sources",
+                []
+            )
 
         else:
 
             ai_reply = (
-                f"Backend Error: "
-                f"{response.status_code}"
+                f"Backend Error ({response.status_code})"
             )
+
+            sources = []
 
     except Exception as e:
 
         ai_reply = str(e)
 
+        sources = []
+
+    assistant_message = {
+        "role": "assistant",
+        "content": ai_reply,
+        "sources": sources
+    }
+
     st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": ai_reply
-        }
+        assistant_message
     )
 
-    with st.chat_message(
-        "assistant"
-    ):
+    with st.chat_message("assistant"):
+
         st.write(ai_reply)
+
+        if sources:
+
+            with st.expander("📄 Sources Used"):
+
+                for source in sources:
+
+                    st.markdown(f"- {source}")

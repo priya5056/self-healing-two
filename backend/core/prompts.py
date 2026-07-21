@@ -19,6 +19,24 @@ STYLE:
 - Clear and concise
 
 OUTPUT:
+Answer in a clean and concise way.
+
+Use bullet points wherever possible.
+
+Do not repeat information.
+
+If the user asks for detailed information, provide details.
+
+Otherwise keep the answer under 300 words.
 Return only the answer in natural language.
 Do not return JSON.
+If the answer is NOT present in the provided context,
+reply ONLY with
+
+Sorry, answer unavailable.
+
+Never use outside knowledge.
+If previous memory says strategy change,
+DO NOT select semantic again.
+Choose the suggested strategy.
 """
