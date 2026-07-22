@@ -1,15 +1,14 @@
 import streamlit as st
 import requests
-
+st.title("🚀 VERSION 22 JULY DEBUG")
 # ----------------------------------
 # Backend URL
 # ----------------------------------
 
 try:
-    BACKEND_URL = st.secrets["BACKEND_URL"]
-except:
-    BACKEND_URL = "http://127.0.0.1:8000"
-
+    BACKEND_URL = st.secrets["BACKEND_URL"].rstrip("/")
+except Exception:
+    BACKEND_URL = "https://self-healing-two-production-2677.up.railway.app"
 
 # ----------------------------------
 # Page Config
@@ -36,22 +35,40 @@ with st.sidebar:
 
     st.title("🎓 AI Academic Assistant")
 
-    st.markdown("### You can ask about")
+    st.markdown("---")
+
+    st.subheader("Ask About")
 
     st.markdown("""
-- 📘 Admissions
-- 💰 Fee Structure
-- 👨‍🏫 Faculty
-- 🕒 Batch Timings
-- 📅 Academic Calendar
-- 📚 Study Materials
-- 🎯 NEET Preparation
-- 💻 JEE Preparation
+- Admissions
+- Fee Structure
+- Faculty Information
+- Academic Calendar
+- Student Policies
+- Scholarships
+- JEE Preparation
+- NEET Preparation
+- Study Material
+- Batch Timings
 """)
 
-    st.divider()
+    st.markdown("---")
 
-    if st.button("🗑 Clear Chat"):
+    # Test Backend
+    try:
+        health = requests.get(f"{BACKEND_URL}/health", timeout=5)
+
+        if health.status_code == 200:
+            st.success("🟢 Backend Connected")
+        else:
+            st.error("🔴 Backend Not Healthy")
+    except Exception as e:
+        st.error("🔴 Backend Offline")
+        st.caption(str(e))
+
+    st.markdown("---")
+
+    if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
         st.rerun()
 
@@ -61,32 +78,32 @@ with st.sidebar:
 
 st.title("🎓 AI Academic Assistant")
 
-st.caption(
-    "Ask questions related to admissions, fees, faculty, study materials, "
-    "batch timings, academic calendar, NEET and JEE preparation."
+st.write(
+"""
+Welcome!
+
+Ask anything related to:
+
+- Admissions
+- Fees
+- Scholarships
+- Faculty
+- Academic Calendar
+- Student Policies
+- JEE Preparation
+- NEET Preparation
+- Study Materials
+"""
 )
 
-st.divider()
-
 # ----------------------------------
-# Chat History
+# Show Chat History
 # ----------------------------------
 
 for message in st.session_state.messages:
 
     with st.chat_message(message["role"]):
-
         st.write(message["content"])
-
-        if message["role"] == "assistant":
-
-            if "sources" in message and message["sources"]:
-
-                with st.expander("📄 Sources Used"):
-
-                    for source in message["sources"]:
-
-                        st.markdown(f"- {source}")
 
 # ----------------------------------
 # Chat Input
@@ -95,7 +112,7 @@ for message in st.session_state.messages:
 user_message = st.chat_input("Ask your question...")
 
 # ----------------------------------
-# Send Message
+# Handle Chat
 # ----------------------------------
 
 if user_message:
@@ -116,60 +133,56 @@ if user_message:
         "message": user_message
     }
 
-    try:
-
-        response = requests.post(
-            f"{BACKEND_URL}/chat",
-            json=payload,
-            timeout=60
-        )
-
-        if response.status_code == 200:
-
-            result = response.json()
-
-            ai_reply = result.get(
-                "reply",
-                "No response."
-            )
-
-            sources = result.get(
-                "sources",
-                []
-            )
-
-        else:
-
-            ai_reply = (
-                f"Backend Error ({response.status_code})"
-            )
-
-            sources = []
-
-    except Exception as e:
-
-        ai_reply = str(e)
-
-        sources = []
-
-    assistant_message = {
-        "role": "assistant",
-        "content": ai_reply,
-        "sources": sources
-    }
-
-    st.session_state.messages.append(
-        assistant_message
-    )
+    url = f"{BACKEND_URL}/chat"
 
     with st.chat_message("assistant"):
 
-        st.write(ai_reply)
+        with st.spinner("Thinking..."):
 
-        if sources:
+            try:
 
-            with st.expander("📄 Sources Used"):
+                response = requests.post(
+                    url,
+                    json=payload,
+                    timeout=120
+                )
 
-                for source in sources:
+                # Debug info
+                st.caption(f"Calling: {url}")
+                st.caption(f"Status Code: {response.status_code}")
 
-                    st.markdown(f"- {source}")
+                if response.status_code == 200:
+
+                    data = response.json()
+
+                    ai_reply = data.get("reply", "No reply received.")
+
+                    st.write(ai_reply)
+
+                    # Optional Sources
+                    if "sources" in data and data["sources"]:
+                        st.markdown("### 📄 Sources")
+                        for source in data["sources"]:
+                            st.write(f"• {source}")
+
+                else:
+
+                    ai_reply = (
+                        f"Backend Error ({response.status_code})\n\n"
+                        f"{response.text}"
+                    )
+
+                    st.error(ai_reply)
+
+            except Exception as e:
+
+                ai_reply = str(e)
+
+                st.error(ai_reply)
+
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": ai_reply
+        }
+    )
