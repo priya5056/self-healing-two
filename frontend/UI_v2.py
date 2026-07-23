@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-st.title("🚀 VERSION 22 JULY DEBUG")
+
 # ----------------------------------
 # Backend URL
 # ----------------------------------
@@ -37,39 +37,46 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.subheader("Ask About")
+    st.markdown("### Ask Questions About")
 
     st.markdown("""
-- Admissions
-- Fee Structure
-- Faculty Information
-- Academic Calendar
-- Student Policies
-- Scholarships
-- JEE Preparation
-- NEET Preparation
-- Study Material
-- Batch Timings
+- 📌 Admissions
+- 💰 Fee Structure
+- 🎓 Scholarships
+- 👨‍🏫 Faculty
+- 📅 Academic Calendar
+- 📚 Study Material
+- ⏰ Batch Timings
+- 📝 Student Policies
+- 🚀 JEE Preparation
+- 🩺 NEET Preparation
 """)
 
     st.markdown("---")
 
-    # Test Backend
+    # Backend Status
     try:
-        health = requests.get(f"{BACKEND_URL}/health", timeout=5)
+
+        health = requests.get(
+            f"{BACKEND_URL}/health",
+            timeout=5
+        )
 
         if health.status_code == 200:
-            st.success("🟢 Backend Connected")
+            st.success("Backend Connected")
+
         else:
-            st.error("🔴 Backend Not Healthy")
-    except Exception as e:
-        st.error("🔴 Backend Offline")
-        st.caption(str(e))
+            st.error("Backend Not Healthy")
+
+    except:
+        st.error("Backend Offline")
 
     st.markdown("---")
 
-    if st.button("🗑️ Clear Chat"):
+    if st.button("🗑️ Clear Chat", use_container_width=True):
+
         st.session_state.messages = []
+
         st.rerun()
 
 # ----------------------------------
@@ -78,41 +85,44 @@ with st.sidebar:
 
 st.title("🎓 AI Academic Assistant")
 
-st.write(
-"""
-Welcome!
+st.info(
+    """
+Ask questions related to your academic documents.
 
-Ask anything related to:
+Examples:
 
-- Admissions
-- Fees
-- Scholarships
-- Faculty
-- Academic Calendar
-- Student Policies
-- JEE Preparation
-- NEET Preparation
-- Study Materials
+• What is the JEE fee?
+
+• Do you provide study material?
+
+• What are the batch timings?
+
+• How can I apply for admission?
+
+• Tell me about scholarships.
 """
 )
 
 # ----------------------------------
-# Show Chat History
+# Display Chat History
 # ----------------------------------
 
 for message in st.session_state.messages:
 
     with st.chat_message(message["role"]):
+
         st.write(message["content"])
 
 # ----------------------------------
 # Chat Input
 # ----------------------------------
 
-user_message = st.chat_input("Ask your question...")
+user_message = st.chat_input(
+    "Ask your academic question..."
+)
 
 # ----------------------------------
-# Handle Chat
+# Chat Logic
 # ----------------------------------
 
 if user_message:
@@ -125,60 +135,69 @@ if user_message:
     )
 
     with st.chat_message("user"):
+
         st.write(user_message)
 
     payload = {
+
         "user_id": "student",
+
         "session_id": "academic_session",
+
         "message": user_message
+
     }
 
-    url = f"{BACKEND_URL}/chat"
+    try:
 
-    with st.chat_message("assistant"):
+        with st.chat_message("assistant"):
 
-        with st.spinner("Thinking..."):
-
-            try:
+            with st.spinner("Searching documents..."):
 
                 response = requests.post(
-                    url,
-                    json=payload,
-                    timeout=120
-                )
 
-                # Debug info
-                st.caption(f"Calling: {url}")
-                st.caption(f"Status Code: {response.status_code}")
+                    f"{BACKEND_URL}/chat",
+
+                    json=payload,
+
+                    timeout=120
+
+                )
 
                 if response.status_code == 200:
 
                     data = response.json()
 
-                    ai_reply = data.get("reply", "No reply received.")
+                    ai_reply = data.get(
+                        "reply",
+                        "No response received."
+                    )
 
                     st.write(ai_reply)
 
-                    # Optional Sources
                     if "sources" in data and data["sources"]:
-                        st.markdown("### 📄 Sources")
-                        for source in data["sources"]:
-                            st.write(f"• {source}")
+
+                        with st.expander("📄 Sources Used"):
+
+                            for source in data["sources"]:
+
+                                st.write(f"• {source}")
 
                 else:
 
                     ai_reply = (
-                        f"Backend Error ({response.status_code})\n\n"
-                        f"{response.text}"
+                        f"Backend Error ({response.status_code})"
                     )
 
                     st.error(ai_reply)
 
-            except Exception as e:
+    except Exception as e:
 
-                ai_reply = str(e)
+        ai_reply = str(e)
 
-                st.error(ai_reply)
+        with st.chat_message("assistant"):
+
+            st.error(ai_reply)
 
     st.session_state.messages.append(
         {
