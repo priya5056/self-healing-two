@@ -37,46 +37,35 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.markdown("### Ask Questions About")
+    st.subheader("Ask About")
 
     st.markdown("""
 - 📌 Admissions
 - 💰 Fee Structure
-- 🎓 Scholarships
-- 👨‍🏫 Faculty
+- 👨‍🏫 Faculty Information
 - 📅 Academic Calendar
-- 📚 Study Material
-- ⏰ Batch Timings
-- 📝 Student Policies
+- 📖 Student Policies
+- 🎓 Scholarships
+- 📚 Study Materials
+- 📝 Batch Timings
 - 🚀 JEE Preparation
 - 🩺 NEET Preparation
 """)
 
     st.markdown("---")
 
-    # Backend Status
-    try:
-
-        health = requests.get(
-            f"{BACKEND_URL}/health",
-            timeout=5
-        )
-
-        if health.status_code == 200:
-            st.success("Backend Connected")
-
-        else:
-            st.error("Backend Not Healthy")
-
-    except:
-        st.error("Backend Offline")
+    st.info(
+        "💡 Tip:\n\n"
+        "Ask complete questions like:\n\n"
+        "• What is the JEE fee?\n"
+        "• Tell me about scholarships.\n"
+        "• Show batch timings."
+    )
 
     st.markdown("---")
 
     if st.button("🗑️ Clear Chat", use_container_width=True):
-
         st.session_state.messages = []
-
         st.rerun()
 
 # ----------------------------------
@@ -85,36 +74,45 @@ with st.sidebar:
 
 st.title("🎓 AI Academic Assistant")
 
-st.info(
-    """
-Ask questions related to your academic documents.
+st.markdown(
+"""
+Welcome!
 
-Examples:
+Ask anything related to:
 
-• What is the JEE fee?
+✅ Admissions
 
-• Do you provide study material?
+✅ Fee Structure
 
-• What are the batch timings?
+✅ Scholarships
 
-• How can I apply for admission?
+✅ Faculty Information
 
-• Tell me about scholarships.
+✅ Academic Calendar
+
+✅ Student Policies
+
+✅ JEE Preparation
+
+✅ NEET Preparation
+
+✅ Study Materials
+
+---
 """
 )
 
 # ----------------------------------
-# Display Chat History
+# Display Previous Messages
 # ----------------------------------
 
 for message in st.session_state.messages:
 
     with st.chat_message(message["role"]):
-
         st.write(message["content"])
 
 # ----------------------------------
-# Chat Input
+# User Input
 # ----------------------------------
 
 user_message = st.chat_input(
@@ -122,7 +120,7 @@ user_message = st.chat_input(
 )
 
 # ----------------------------------
-# Chat Logic
+# Handle User Query
 # ----------------------------------
 
 if user_message:
@@ -135,33 +133,26 @@ if user_message:
     )
 
     with st.chat_message("user"):
-
         st.write(user_message)
 
     payload = {
-
         "user_id": "student",
-
         "session_id": "academic_session",
-
         "message": user_message
-
     }
 
-    try:
+    url = f"{BACKEND_URL}/chat"
 
-        with st.chat_message("assistant"):
+    with st.chat_message("assistant"):
 
-            with st.spinner("Searching documents..."):
+        with st.spinner("Thinking..."):
+
+            try:
 
                 response = requests.post(
-
-                    f"{BACKEND_URL}/chat",
-
+                    url,
                     json=payload,
-
                     timeout=120
-
                 )
 
                 if response.status_code == 200:
@@ -175,13 +166,18 @@ if user_message:
 
                     st.write(ai_reply)
 
-                    if "sources" in data and data["sources"]:
+                    # Display Sources
+                    if data.get("sources"):
 
-                        with st.expander("📄 Sources Used"):
+                        with st.expander(
+                            "📄 Sources Used"
+                        ):
 
                             for source in data["sources"]:
 
-                                st.write(f"• {source}")
+                                st.markdown(
+                                    f"- **{source}**"
+                                )
 
                 else:
 
@@ -191,13 +187,30 @@ if user_message:
 
                     st.error(ai_reply)
 
-    except Exception as e:
+            except requests.exceptions.Timeout:
 
-        ai_reply = str(e)
+                ai_reply = (
+                    "Request timed out. "
+                    "Please try again."
+                )
 
-        with st.chat_message("assistant"):
+                st.error(ai_reply)
 
-            st.error(ai_reply)
+            except requests.exceptions.ConnectionError:
+
+                ai_reply = (
+                    "Unable to connect to the backend server."
+                )
+
+                st.error(ai_reply)
+
+            except Exception as e:
+
+                ai_reply = (
+                    f"Unexpected Error:\n\n{str(e)}"
+                )
+
+                st.error(ai_reply)
 
     st.session_state.messages.append(
         {
